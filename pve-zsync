@@ -253,6 +253,7 @@ sub parse_argv {
 	dest_user => undef,
 	prepend_storage_id => undef,
 	compressed => undef,
+	encrypted => undef,
 	properties => undef,
 	dest_config_path => undef,
     };
@@ -272,6 +273,7 @@ sub parse_argv {
 	'dest-user=s' => \$param->{dest_user},
 	'prepend-storage-id' => \$param->{prepend_storage_id},
 	'compressed' => \$param->{compressed},
+	'encrypted' => \$param->{encrypted},
 	'properties' => \$param->{properties},
 	'dest-config-path=s' => \$param->{dest_config_path},
     );
@@ -346,6 +348,7 @@ sub param_to_job {
     $job->{dest_user} = $param->{dest_user};
     $job->{prepend_storage_id} = !!$param->{prepend_storage_id};
     $job->{compressed} = !!$param->{compressed};
+    $job->{encrypted} = !!$param->{encrypted};
     $job->{properties} = !!$param->{properties};
     $job->{dest_config_path} = $param->{dest_config_path} if $param->{dest_config_path};
 
@@ -474,6 +477,7 @@ sub format_job {
     $text .= " --dest-user $job->{dest_user}";
     $text .= " --prepend-storage-id" if $job->{prepend_storage_id};
     $text .= " --compressed" if $job->{compressed};
+    $text .= " --encrypted" if $job->{encrypted};
     $text .= " --properties" if $job->{properties};
     $text .= " --dest-config-path $job->{dest_config_path}" if $job->{dest_config_path};
     $text .= "\n";
@@ -1035,6 +1039,7 @@ sub send_image {
     push @$cmd, 'zfs', 'send';
     push @$cmd, '-L', if $param->{compressed}; # no effect if dataset never had large recordsize
     push @$cmd, '-c', if $param->{compressed};
+    push @$cmd, '-w', if $param->{encrypted};
     push @$cmd, '-p', if $param->{properties};
     push @$cmd, '-v' if $param->{verbose};
 
@@ -1202,6 +1207,9 @@ $PROGNAME create --dest <string> --source <string> [OPTIONS]
 		zstd_compress or large_blocks are in use by the source, they need to be enabled on
 		the target as well.
 
+	--encrypted
+		If specified, send data in raw encrypted state. 
+
 	--properties
 		If specified, include the dataset's properties in the stream.
 
@@ -1250,6 +1258,9 @@ $PROGNAME sync --dest <string> --source <string> [OPTIONS]\n
 		If specified, send data without decompressing first. If features lz4_compress,
 		zstd_compress or large_blocks are in use by the source, they need to be enabled on
 		the target as well.
+
+	--encrypted
+		If specified, send data in raw encrypted state.
 
 	--properties
 		If specified, include the dataset's properties in the stream.
